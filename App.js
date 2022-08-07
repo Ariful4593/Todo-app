@@ -1,17 +1,13 @@
 import React from 'react';
-import { StyleSheet, Text, View, SafeAreaView, TextInput, TouchableOpacity, FlatList } from 'react-native';
+import { StyleSheet, Text, View, SafeAreaView, TextInput, TouchableOpacity, FlatList, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 const COLORS = { primary: '#1f145c', white: '#fff' }
 export default function App() {
+
+  const [textInput, setTextInput] = React.useState('');
   const [todos, setTodos] = React.useState([
     { id: 1, task: 'First Todo', completed: false },
     { id: 2, task: 'Second Todo', completed: true },
-    { id: 3, task: 'Third Todo', completed: true },
-    { id: 4, task: 'Fourth Todo', completed: true },
-    { id: 5, task: 'First Todo', completed: true },
-    { id: 6, task: 'Second Todo', completed: true },
-    { id: 7, task: 'Third Todo', completed: true },
-    { id: 8, task: 'Fourth Todo', completed: true },
   ])
 
   const ListItem = ({ todo }) => {
@@ -20,7 +16,7 @@ export default function App() {
         <Text style={{ fontWeight: 'bold', fontSize: 15, color: COLORS.primary, textDecorationLine: todo?.completed ? "line-through" : 'none' }} >{todo?.task}</Text>
       </View>
       {
-        !todo?.completed && <TouchableOpacity style={[styles.actionIcon]}>
+        !todo?.completed && <TouchableOpacity style={[styles.actionIcon]} onPress={() => markTodoComplete(todo.id)} >
           <Icon name='done' size={20} color={COLORS.white} />
         </TouchableOpacity>
       }
@@ -29,6 +25,33 @@ export default function App() {
         <Icon name='delete' size={20} color={COLORS.white} />
       </TouchableOpacity>
     </View>
+  }
+
+  const addTodo = () => {
+    if (textInput) {
+      const newTodo = {
+        id: Math.random(),
+        task: textInput,
+        completed: false
+      };
+      setTodos([...todos, newTodo]);
+      setTextInput('')
+    } else {
+      Alert.alert('Error', 'Please input todo.')
+    }
+  }
+
+  const markTodoComplete = (todoId) => {
+    const newTodos = todos.map(item => {
+      if (item.id === todoId) {
+        return {
+          ...item, completed: true
+        }
+      }
+      return item;
+    })
+
+    setTodos(newTodos)
   }
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.white }}>
@@ -44,9 +67,12 @@ export default function App() {
       />
       <View style={styles.footer}>
         <View style={styles.inputContainer}>
-          <TextInput placeholder='Add Todo' />
+          <TextInput placeholder='Add Todo'
+            value={textInput}
+            onChangeText={text => setTextInput(text)}
+          />
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={addTodo} >
           <View style={styles.iconContainer}>
             <Icon name='add' color={COLORS.white} size={30} />
           </View>
