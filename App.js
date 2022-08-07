@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React from 'react';
 import { StyleSheet, Text, View, SafeAreaView, TextInput, TouchableOpacity, FlatList, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -5,10 +6,14 @@ const COLORS = { primary: '#1f145c', white: '#fff' }
 export default function App() {
 
   const [textInput, setTextInput] = React.useState('');
-  const [todos, setTodos] = React.useState([
-    { id: 1, task: 'First Todo', completed: false },
-    { id: 2, task: 'Second Todo', completed: true },
-  ])
+  const [todos, setTodos] = React.useState([])
+
+  React.useEffect(() => {
+    getTodosFromUserDevice();
+  }, [])
+  React.useEffect(() => {
+    saveTodoToUserDevice(todos)
+  }, [todos])
 
   const ListItem = ({ todo }) => {
     return <View style={styles.listItem} >
@@ -21,10 +26,30 @@ export default function App() {
         </TouchableOpacity>
       }
 
-      <TouchableOpacity style={[styles.actionIcon, { backgroundColor: 'red' }]}>
+      <TouchableOpacity style={[styles.actionIcon, { backgroundColor: 'red' }]} onPress={() => deleteTodo(todo?.id)}>
         <Icon name='delete' size={20} color={COLORS.white} />
       </TouchableOpacity>
     </View>
+  }
+
+  const saveTodoToUserDevice = async (todos) => {
+    try {
+      const stringifyTodos = JSON.stringify(todos)
+      await AsyncStorage.setItem('todos', stringifyTodos)
+    } catch (e) {
+      // saving error
+    }
+  }
+
+  const getTodosFromUserDevice = async () => {
+    try {
+      const todos = await AsyncStorage.getItem('todos');
+      if (todos) {
+        setTodos(JSON.parse(todos))
+      }
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   const addTodo = () => {
@@ -53,11 +78,28 @@ export default function App() {
 
     setTodos(newTodos)
   }
+
+  const deleteTodo = (todoId) => {
+    const newTodos = todos.filter(item => item.id !== todoId);
+    setTodos(newTodos)
+  }
+
+  const clearTodos = () => {
+    Alert.alert('Confirm', 'Clear todos?', [
+      {
+        text: 'Yes',
+        onPress: () => setTodos([])
+      },
+      { text: 'No' }
+    ])
+
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.white }}>
       <View style={styles.header}>
         <Text style={{ fontWeight: 'bold', fontSize: 20, color: COLORS.primary }} >Todo App</Text>
-        <Icon name='delete' size={25} color='red' />
+        <Icon name='delete' size={25} color='red' onPress={clearTodos} />
       </View>
       <FlatList
         showsVerticalScrollIndicator={false}
@@ -105,6 +147,8 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
+    paddingBottom: 0,
+    marginTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between'
@@ -126,7 +170,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     marginRight: 20,
     borderRadius: 30,
-    paddingHorizontal: 20
+    padding: 10
   },
   iconContainer: {
     height: 50,
